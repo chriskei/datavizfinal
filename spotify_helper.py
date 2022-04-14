@@ -1,4 +1,3 @@
-import sys
 import spotipy
 import pandas as pd
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -10,27 +9,27 @@ class SpotifyHelper(object):
         self.auth_manager = SpotifyClientCredentials()
         self.sp = spotipy.Spotify(auth_manager=self.auth_manager)
 
+    # Gets a playlist (nested_dict) from a playlist_id
     def get_playlist(self, playlist_id: str) -> dict:
-        '''Gets a playlist (nested_dict) from a playlist_id.'''
         return self.sp.playlist(playlist_id)
     
+    # Returns the song IDs from songs inside of a playlist (nested_dict)
     def get_track_ids_from_playlist(self, playlist: dict) -> OrderedDict[str]:
-        '''Returns the song IDs from songs inside of a playlist (nested_dict)'''
         track_ids = OrderedDict()
         for item in playlist['tracks']['items']:
             track_ids[item['track']['name']] = item['track']['id']
         
         return track_ids
     
+    # Returns the song IDs from songs inside of a playlist (nested_dict), given a playlist_id
     def get_track_ids_from_playlist_ids(self, playlist_id: str) -> List[str]:
-        '''Returns the song IDs from songs inside of a playlist (nested_dict), given a playlist_id'''
         playlist = self.get_playlist(playlist_id)
 
         return self.get_track_ids_from_playlist(playlist)
     
+    # Get audio features for one or multiple tracks based upon their song IDs
+    # Note: max # of songs retrievable is 100.
     def get_audio_features_from_track_ids(self, track_ids: dict[str]) -> dict:
-        '''Get audio features for one or multiple tracks based upon their Spotify IDs Parameters.
-        Note: max # of songs retrievable is 100.'''
         return self.sp.audio_features(track_ids)
 
     # TODO: change keying by track ID, not name.
@@ -61,9 +60,8 @@ class SpotifyHelper(object):
             return audio_features_new
    
 
+# Example playlist ID for input: 3FACwN2Ta8kXFcbquQ2u6K
 if __name__ == '__main__':
-    # example playlist ID for input: '3FACwN2Ta8kXFcbquQ2u6K'
-    
     spot = SpotifyHelper()
     df = spot.get_audio_features_from_playlist_id('3FACwN2Ta8kXFcbquQ2u6K')
     df.to_csv('test.csv', index=False)
