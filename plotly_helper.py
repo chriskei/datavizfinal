@@ -1,6 +1,7 @@
 import webbrowser
 import plotly.express as px
-from dash import Dash, html, dcc, Input, Output
+import pandas as pd
+from dash import Dash, html, dcc
 from threading import Timer
 from wordcloud_helper import generate_wordcloud
 
@@ -25,7 +26,27 @@ class PlotlyHelper(object):
             return px.violin(self.df, x=categories, box=True)
         else:
             return px.violin(self.df, x=category, box=True)
-    
+
+    def create_genre_bar(self):
+        genre_bank = ["rap", "metal", "latin", "edm", "rock", "pop", "folk", "hip hop", 
+        "country", "jazz", "classical", "r&b", "dance", "indie", "soul"]
+        genre_dict = dict.fromkeys(genre_bank, 0)
+        # count genres in each song
+        for song in self.df.genres:
+            for genre in genre_bank:
+                if genre in song:
+                    genre_dict[genre] += 1
+        
+        # only keep genres with a nonzero count 
+        for genre in genre_bank:
+            if genre_dict[genre] == 0:
+                genre_dict.pop(genre)
+
+        genre_df = pd.DataFrame.from_dict(genre_dict, orient='index', columns=["Count"])
+        return px.bar(genre_df, y="Count", text_auto=True, labels={
+            "index": "Genre"
+        })
+
 
 # Creates and runs a Dash app with certain Plotly graphs from the specified df
 # We WILL need to change this to be more generic in the future OR aggregate all data into one df
@@ -38,7 +59,7 @@ def run_dash(df):
     tempo_histogram = plot.create_histogram("tempo")
     mood_violin = plot.create_violin("danceability", "energy", "valence")
     year_histogram = plot.create_histogram("date").update_xaxes(categoryorder='category ascending')
-    
+    genre_bar = plot.create_genre_bar()
 
     app.layout = html.Div(children=[
         html.H1(children="DV Final Playlist Visualized"),
@@ -73,6 +94,11 @@ def run_dash(df):
         dcc.Graph(
             id="tempo_histogram",
             figure=tempo_histogram
+        ),
+
+        dcc.Graph(
+            id="genre_bar",
+            figure=genre_bar
         )
     ])
 
