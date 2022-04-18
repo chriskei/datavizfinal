@@ -15,6 +15,7 @@ class PlotlyHelper(object):
     # Creates a histogram using the values in self.df from the specified category
     def create_histogram(self, category: str):
         hist = px.histogram(self.df, x=category, template="simple_white")
+        hist.update_layout(xaxis_title=None)
         hist.update_layout(yaxis_title=None)
         return hist
 
@@ -68,22 +69,22 @@ class PlotlyHelper(object):
         return html.Div(children=[
             html.H2(children="Average Popularity:", style={"font-size": "40px"}),
             html.H4(children=popularity_str, style={"font-size": "40px", "margin": "0", "line-height": "0"}),
-            html.H5(children=remark_str, style={"font-size": "30px", "line-height": "0"})
-        ], style={"margin-top": "16px"})
+            html.H5(children=remark_str, style={"font-size": "30px"})
+        ], style={"margin-top": "16px", "margin-bottom": "120px"})
 
     # Creates a string display of recommended songs
     def create_recommendations(self):
         div_children = [
-            html.H2(children="Song Recommendations", style={"font-size": "40px"}),
+            html.H2(children="Song Recommendations", style={"font-size": "40px", "margin-bottom": "8px"}),
         ]
 
         for rec in self.track_recs:
             div_children.append(html.A(children=str(rec["name"]),
                                        href=rec["href"],
                                        target="_blank",
-                                       style={"margin-right": "32px", "font-size": "30px"}))
+                                       style={"margin-right": "32px", "line-height": "1.5", "font-size": "30px"}))
 
-        return html.Div(children=div_children)
+        return html.Div(children=div_children, style={"margin": "64px 64px 96px"})
 
     # Creates a violin plot using the values in self.df from the specified category
     # if multiple args are passed in, plots it on the same figure
@@ -131,6 +132,7 @@ class PlotlyHelper(object):
         bar = px.bar(genre_df, template="simple_white", labels={
             "index": "Genre"
         })
+        bar.update_layout(xaxis_title=None)
         bar.update_layout(yaxis_title=None)
         bar.update_layout(showlegend=False)
         return bar
@@ -155,11 +157,12 @@ def run_dash(df, track_recs, playlist_name):
     app.layout = html.Div(children=[
 
         html.H1(children=playlist_name_header,
-                style={"font-size": "100px", "text-align": "center"}),
+                style={"font-size": "100px", "text-align": "center", "text-decoration": "underline"}),
 
         html.Div(children=[
             # Left div
             html.Div(children=[
+                html.H2(children="Artists", style={"font-size": "40px"}),
                 html.Img(
                     id="artist_wordcloud",
                     src=app.get_asset_url(artist_wordcloud),
@@ -167,16 +170,22 @@ def run_dash(df, track_recs, playlist_name):
                     height=400
                 ),
 
+                html.H2(children="Genre Distribution",
+                        style={"font-size": "40px", "position": "relative", "top": "85px", "z-index": "1"}),
                 dcc.Graph(
                     id="genre_bar",
                     figure=genre_bar
                 ),
 
+                html.H2(children="Year Released",
+                        style={"font-size": "40px", "position": "relative", "top": "85px", "z-index": "1"}),
                 dcc.Graph(
                     id="year_histogram",
                     figure=year_histogram
                 ),
 
+                html.H2(children="Song Duration (min)",
+                        style={"font-size": "40px", "position": "relative", "top": "85px", "z-index": "1"}),
                 dcc.Graph(
                     id="duration_histogram",
                     figure=duration_histogram
@@ -189,16 +198,22 @@ def run_dash(df, track_recs, playlist_name):
 
                 popularity_visualization,
 
+                html.H2(children="Overall Mood",
+                        style={"font-size": "40px", "position": "relative", "top": "85px", "z-index": "1"}),
                 dcc.Graph(
                     id="mood_violin",
                     figure=mood_violin
                 ),
 
+                html.H2(children="Loudness (dB)",
+                        style={"font-size": "40px", "position": "relative", "top": "85px", "z-index": "1"}),
                 dcc.Graph(
                     id="loudness_histogram",
                     figure=loudness_histogram
                 ),
 
+                html.H2(children="Tempo (BPM)",
+                        style={"font-size": "40px", "position": "relative", "top": "85px", "z-index": "1"}),
                 dcc.Graph(
                     id="tempo_histogram",
                     figure=tempo_histogram
