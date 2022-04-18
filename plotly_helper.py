@@ -6,15 +6,83 @@ from threading import Timer
 from wordcloud_helper import generate_wordcloud
 
 # Provides access to Plotly express functionality such as creating returnable graph figures
-# Currently instantiated with a specific data frame to reduce the number of times we pass df around,
-# we MAY want to change this to be more like a generic library/SpotifyHelper in the future
+# Currently instantiated with a specific data frame to reduce the number of times we pass df around
 class PlotlyHelper(object):
-    def __init__(self, df):
+    def __init__(self, df, track_recs):
         self.df = df
+        self.track_recs = track_recs
     
     # Creates a histogram using the values in self.df from the specified category
     def create_histogram(self, category: str):
-        return px.histogram(self.df, x=category)
+        hist = px.histogram(self.df, x=category, template="simple_white")
+        hist.update_layout(yaxis_title=None)
+        return hist
+
+    # Creates a string display of major vs minor preference
+    def create_mode(self):
+        major_count = 0
+        minor_count = 0
+
+        for i in self.df.index:
+            current_mode = self.df["mode"][i]
+            if current_mode == 1:
+                major_count += 1
+            else:
+                minor_count += 1
+            
+        counts_str = str(major_count) + " major - " + str(minor_count) + " minor"
+        remark_str = "You have a good mix of emotions in your songs!"
+        if (major_count / minor_count > 2):
+            remark_str = "You like listening to happy, upbeat songs!"
+        elif (minor_count / major_count > 2):
+            remark_str = "You like listening to dark, sad songs!"
+
+        return html.Div(children=[
+            html.H3(children="Song Modality"),
+            html.H1(children=counts_str),
+            html.H4(children=remark_str)
+        ])
+
+    # Creates a string display of popularity
+    def create_popularity(self):
+        song_count = 0
+        total_popularity = 0
+
+        for i in self.df.index:
+            song_count += 1
+            total_popularity += self.df["popularity"][i]
+
+        average_popularity = int(total_popularity / song_count)
+        number_suffix = "th"
+        if average_popularity % 10 == 2:
+            number_suffix = "nd"
+        elif average_popularity % 10 == 3:
+            number_suffix = "rd"
+        popularity_str = str(average_popularity) + number_suffix + " percentile"
+        remark_str = "Keep listening to both indie and mainstream artists!"
+        if average_popularity < 34:
+            remark_str = "Great job supporting indie artists!"
+        elif average_popularity > 67:
+            remark_str = "You're up to date with the current top hits!"
+
+        return html.Div(children=[
+            html.H3(children="Average Popularity"),
+            html.H1(children=popularity_str),
+            html.H4(children=remark_str)
+        ])
+
+    # Creates a string display of recommended songs
+    def create_recommendations(self):
+        div_children = [
+            html.H3(children="Song Recommendations"),
+            html.H4(children="Try listening to some of these!")
+        ]
+
+        for rec in self.track_recs:
+            div_children.append(html.A(children=str(rec["name"]), href=rec["href"], target="_blank"))
+            div_children.append(html.Div(children="")) # Default spacer for now
+
+        return html.Div(children=div_children)
 
     # Creates a violin plot using the values in self.df from the specified category
     # if multiple args are passed in, plots it on the same figure
@@ -47,26 +115,27 @@ class PlotlyHelper(object):
             "index": "Genre"
         })
 
-
 # Creates and runs a Dash app with certain Plotly graphs from the specified df
-# We WILL need to change this to be more generic in the future OR aggregate all data into one df
-def run_dash(df):
+def run_dash(df, track_recs):
     app = Dash(__name__)
 
-    plot = PlotlyHelper(df)
+    plot = PlotlyHelper(df, track_recs)
     artist_wordcloud = generate_wordcloud(df, "artists")
     loudness_histogram = plot.create_histogram("loudness")
     tempo_histogram = plot.create_histogram("tempo")
     mood_violin = plot.create_violin("danceability", "energy", "valence")
     year_histogram = plot.create_histogram("date").update_xaxes(categoryorder='category ascending')
     genre_bar = plot.create_genre_bar()
+    duration_histogram = plot.create_histogram("duration_ms")
+    mode_visualization = plot.create_mode()
+    popularity_visualization = plot.create_popularity()
+    recommendations_visualization = plot.create_recommendations()
 
     app.layout = html.Div(children=[
         html.H1(children="DV Final Playlist Visualized"),
 
         html.Div(children='''
             Creator: Group 1
-            Songs: __________
         '''),
 
         html.Img(
@@ -99,10 +168,21 @@ def run_dash(df):
         dcc.Graph(
             id="genre_bar",
             figure=genre_bar
-        )
+        ),
+
+        dcc.Graph(
+            id="duration_histogram",
+            figure=duration_histogram
+        ),
+
+        mode_visualization,
+
+        popularity_visualization,
+
+        recommendations_visualization
     ])
 
     # Automatically open a window pointing to the Dash server
     # Delay by 1s so that Dash has time to start up the server
     Timer(1000, webbrowser.open("http://localhost:8050")).start()
-    app.run_server(debug=True)
+    app.run_server(debug=True, use_reloader=False)
