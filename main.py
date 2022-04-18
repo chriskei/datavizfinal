@@ -24,5 +24,6 @@ if __name__ == "__main__":
     spot = SpotifyHelper()
     df = spot.get_main_track_data(playlist_id)
     track_recs = spot.get_recommendations_from_track_ids(list(df.index))
+    playlist_name = spot.get_playlist(playlist_id)["name"]
 
-    run_dash(df, track_recs)
+    run_dash(df, track_recs, playlist_name)

@@ -38,9 +38,9 @@ class PlotlyHelper(object):
             remark_str = "You like listening to dark, sad songs!"
 
         return html.Div(children=[
-            html.H3(children="Song Modality"),
-            html.H1(children=counts_str),
-            html.H4(children=remark_str)
+            html.H2(children="Song Modality:", style={"font-size": "40px"}),
+            html.H4(children=counts_str, style={"font-size": "40px", "margin": "0", "line-height": "0"}),
+            html.H5(children=remark_str, style={"font-size": "30px"})
         ])
 
     # Creates a string display of popularity
@@ -66,34 +66,41 @@ class PlotlyHelper(object):
             remark_str = "You're up to date with the current top hits!"
 
         return html.Div(children=[
-            html.H3(children="Average Popularity"),
-            html.H1(children=popularity_str),
-            html.H4(children=remark_str)
-        ])
+            html.H2(children="Average Popularity:", style={"font-size": "40px"}),
+            html.H4(children=popularity_str, style={"font-size": "40px", "margin": "0", "line-height": "0"}),
+            html.H5(children=remark_str, style={"font-size": "30px", "line-height": "0"})
+        ], style={"margin-top": "16px"})
 
     # Creates a string display of recommended songs
     def create_recommendations(self):
         div_children = [
-            html.H3(children="Song Recommendations"),
-            html.H4(children="Try listening to some of these!")
+            html.H2(children="Song Recommendations", style={"font-size": "40px"}),
         ]
 
         for rec in self.track_recs:
-            div_children.append(html.A(children=str(rec["name"]), href=rec["href"], target="_blank"))
-            div_children.append(html.Div(children="")) # Default spacer for now
+            div_children.append(html.A(children=str(rec["name"]),
+                                       href=rec["href"],
+                                       target="_blank",
+                                       style={"margin-right": "16px", "font-size": "30px"}))
 
         return html.Div(children=div_children)
 
     # Creates a violin plot using the values in self.df from the specified category
     # if multiple args are passed in, plots it on the same figure
     def create_violin(self, category: str, *args):
+        violin = None
+
         if args:
             categories = [category]
             for arg in args:
                 categories.append(arg)
-            return px.violin(self.df, x=categories, box=True)
+            violin = px.violin(self.df, x=categories, box=True, template="simple_white")
         else:
-            return px.violin(self.df, x=category, box=True)
+            violin = px.violin(self.df, x=category, box=True, template="simple_white")
+        
+        violin.update_layout(yaxis_title=None)
+        violin.update_layout(xaxis_title=None)
+        return violin
 
     def create_genre_bar(self):
         genre_bank = ["rap", "metal", "latin", "edm", "rock", "pop", "folk", "hip hop", 
@@ -111,13 +118,17 @@ class PlotlyHelper(object):
                 genre_dict.pop(genre)
 
         genre_df = pd.DataFrame.from_dict(genre_dict, orient='index', columns=["Count"])
-        return px.bar(genre_df, y="Count", text_auto=True, labels={
+        bar = px.bar(genre_df, template="simple_white", labels={
             "index": "Genre"
         })
-
+        bar.update_layout(yaxis_title=None)
+        bar.update_layout(showlegend=False)
+        return bar
+    
 # Creates and runs a Dash app with certain Plotly graphs from the specified df
-def run_dash(df, track_recs):
+def run_dash(df, track_recs, playlist_name):
     app = Dash(__name__)
+    playlist_name_header = playlist_name + " - Visualized"
 
     plot = PlotlyHelper(df, track_recs)
     artist_wordcloud = generate_wordcloud(df, "artists")
@@ -132,55 +143,62 @@ def run_dash(df, track_recs):
     recommendations_visualization = plot.create_recommendations()
 
     app.layout = html.Div(children=[
-        html.H1(children="DV Final Playlist Visualized"),
 
-        html.Div(children='''
-            Creator: Group 1
-        '''),
+        html.H1(children=playlist_name_header,
+                style={"font-size": "100px", "text-align": "center"}),
 
-        html.Img(
-            id="artist_wordcloud",
-            src=app.get_asset_url(artist_wordcloud),
-            width=400,
-            height=400
-        ),
+        html.Div(children=[
+            # Left div
+            html.Div(children=[
+                html.Img(
+                    id="artist_wordcloud",
+                    src=app.get_asset_url(artist_wordcloud),
+                    width=400,
+                    height=400
+                ),
 
-        dcc.Graph(
-            id="year_histogram",
-            figure=year_histogram
-        ),
+                dcc.Graph(
+                    id="genre_bar",
+                    figure=genre_bar
+                ),
 
-        dcc.Graph(
-            id="mood_violin",
-            figure=mood_violin
-        ),
+                dcc.Graph(
+                    id="year_histogram",
+                    figure=year_histogram
+                ),
 
-        dcc.Graph(
-            id="loudness_histogram",
-            figure=loudness_histogram
-        ),
+                dcc.Graph(
+                    id="duration_histogram",
+                    figure=duration_histogram
+                )
+            ], style={"width": "50%", "text-align": "center"}),
 
-        dcc.Graph(
-            id="tempo_histogram",
-            figure=tempo_histogram
-        ),
+            # Right div
+            html.Div(children=[
+                mode_visualization,
 
-        dcc.Graph(
-            id="genre_bar",
-            figure=genre_bar
-        ),
+                popularity_visualization,
 
-        dcc.Graph(
-            id="duration_histogram",
-            figure=duration_histogram
-        ),
+                dcc.Graph(
+                    id="mood_violin",
+                    figure=mood_violin
+                ),
 
-        mode_visualization,
+                dcc.Graph(
+                    id="loudness_histogram",
+                    figure=loudness_histogram
+                ),
 
-        popularity_visualization,
+                dcc.Graph(
+                    id="tempo_histogram",
+                    figure=tempo_histogram
+                )
+            ], style={"width": "50%", "text-align": "center", "align-self": "end"}),
+        ], style={"display": "flex" }),
 
         recommendations_visualization
-    ])
+
+    ], style={"font-family": "sans-serif", "color": "#004466"})
 
     # Automatically open a window pointing to the Dash server
     # Delay by 1s so that Dash has time to start up the server
