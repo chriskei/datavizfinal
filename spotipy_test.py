@@ -21,15 +21,7 @@ if __name__ == "__main__":
     auth_manager = SpotifyClientCredentials()
     sp = spotipy.Spotify(auth_manager=auth_manager)
 
-    # my_playlist = sp.playlist(playlist_id)
-    # print(my_playlist)
-
     spot = SpotifyHelper()
-    df = spot.get_audio_features_from_playlist_id('3FACwN2Ta8kXFcbquQ2u6K')
-        
-    # fig = px.histogram(df, x="danceability")
-    # fig.show()
-    # fig2 = px.histogram(df, x="energy")
-    # fig2.show()
+    df = spot.get_main_track_data('3FACwN2Ta8kXFcbquQ2u6K')
 
     run_dash(df)
