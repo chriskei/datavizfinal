@@ -59,9 +59,9 @@ class PlotlyHelper(object):
         elif average_popularity % 10 == 3:
             number_suffix = "rd"
         popularity_str = str(average_popularity) + number_suffix + " percentile"
-        remark_str = "Keep listening to both indie and mainstream artists!"
+        remark_str = "Keep listening to both independent and mainstream artists!"
         if average_popularity < 34:
-            remark_str = "Great job supporting indie artists!"
+            remark_str = "Great job supporting independent artists!"
         elif average_popularity > 67:
             remark_str = "You're up to date with the current top hits!"
 
@@ -81,7 +81,7 @@ class PlotlyHelper(object):
             div_children.append(html.A(children=str(rec["name"]),
                                        href=rec["href"],
                                        target="_blank",
-                                       style={"margin-right": "16px", "font-size": "30px"}))
+                                       style={"margin-right": "32px", "font-size": "30px"}))
 
         return html.Div(children=div_children)
 
@@ -106,13 +106,23 @@ class PlotlyHelper(object):
         genre_bank = ["rap", "metal", "latin", "edm", "rock", "pop", "folk", "hip hop", 
         "country", "jazz", "classical", "r&b", "dance", "indie", "soul"]
         genre_dict = dict.fromkeys(genre_bank, 0)
+        genre_dict["other"] = 0
         # count genres in each song
         for song in self.df.genres:
+            is_in_genre_bank = False
             for genre in genre_bank:
-                if genre in song:
-                    genre_dict[genre] += 1
+                for song_genre in song:
+                    if not is_in_genre_bank and genre in song_genre:
+                        genre_dict[genre] += 1
+                        is_in_genre_bank = True
+                        break
+                if is_in_genre_bank:
+                    break
+            if not is_in_genre_bank:
+                genre_dict["other"] += 1
         
         # only keep genres with a nonzero count 
+        genre_bank.append('other')
         for genre in genre_bank:
             if genre_dict[genre] == 0:
                 genre_dict.pop(genre)
@@ -137,7 +147,7 @@ def run_dash(df, track_recs, playlist_name):
     mood_violin = plot.create_violin("danceability", "energy", "valence")
     year_histogram = plot.create_histogram("date").update_xaxes(categoryorder='category ascending')
     genre_bar = plot.create_genre_bar()
-    duration_histogram = plot.create_histogram("duration_ms")
+    duration_histogram = plot.create_histogram("duration")
     mode_visualization = plot.create_mode()
     popularity_visualization = plot.create_popularity()
     recommendations_visualization = plot.create_recommendations()

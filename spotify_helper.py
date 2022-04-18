@@ -86,6 +86,10 @@ class SpotifyHelper(object):
         
         if as_df:
             df = self.dict_to_df(main_track_data, rearrange_cols=True)
+
+            if 'duration_ms' in df.columns:
+                df['duration'] = df['duration_ms']/1000/60
+
             return df
         else: 
             return main_track_data
