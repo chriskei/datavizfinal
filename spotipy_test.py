@@ -22,6 +22,7 @@ if __name__ == "__main__":
     sp = spotipy.Spotify(auth_manager=auth_manager)
 
     spot = SpotifyHelper()
-    df = spot.get_main_track_data('3FACwN2Ta8kXFcbquQ2u6K')
+    df = spot.get_main_track_data(playlist_id)
+    track_recs = spot.get_recommendations_from_track_ids(list(df.index))
 
-    run_dash(df)
+    run_dash(df, track_recs)
