@@ -15,8 +15,7 @@ class PlotlyHelper(object):
     # Creates a histogram using the values in self.df from the specified category
     def create_histogram(self, category: str):
         hist = px.histogram(self.df, x=category, template="simple_white")
-        hist.update_layout(xaxis_title=None)
-        hist.update_layout(yaxis_title=None)
+        hist.update_layout(xaxis_title=None, yaxis_title=None)
         return hist
 
     # Creates a string display of major vs minor preference
@@ -42,7 +41,7 @@ class PlotlyHelper(object):
             html.H2(children="Song Modality:", style={"font-size": "40px"}),
             html.H4(children=counts_str, style={"font-size": "40px", "margin": "0", "line-height": "0"}),
             html.H5(children=remark_str, style={"font-size": "30px"})
-        ])
+        ], style={"padding": "0 32px"})
 
     # Creates a string display of popularity
     def create_popularity(self):
@@ -70,7 +69,7 @@ class PlotlyHelper(object):
             html.H2(children="Average Popularity:", style={"font-size": "40px"}),
             html.H4(children=popularity_str, style={"font-size": "40px", "margin": "0", "line-height": "0"}),
             html.H5(children=remark_str, style={"font-size": "30px"})
-        ], style={"margin-top": "16px", "margin-bottom": "120px"})
+        ], style={"margin-top": "16px", "margin-bottom": "120px", "padding": "0 32px"})
 
     # Creates a string display of recommended songs
     def create_recommendations(self):
@@ -99,8 +98,7 @@ class PlotlyHelper(object):
         else:
             violin = px.violin(self.df, x=category, box=True, template="simple_white")
         
-        violin.update_layout(yaxis_title=None)
-        violin.update_layout(xaxis_title=None)
+        violin.update_layout(xaxis_title=None, yaxis_title=None)
         return violin
 
     def create_genre_bar(self):
@@ -132,9 +130,7 @@ class PlotlyHelper(object):
         bar = px.bar(genre_df, template="simple_white", labels={
             "index": "Genre"
         })
-        bar.update_layout(xaxis_title=None)
-        bar.update_layout(yaxis_title=None)
-        bar.update_layout(showlegend=False)
+        bar.update_layout(xaxis_title=None, yaxis_title=None, showlegend=False)
         return bar
     
 # Creates and runs a Dash app with certain Plotly graphs from the specified df
@@ -147,7 +143,7 @@ def run_dash(df, track_recs, playlist_name):
     loudness_histogram = plot.create_histogram("loudness")
     tempo_histogram = plot.create_histogram("tempo")
     mood_violin = plot.create_violin("danceability", "energy", "valence")
-    year_histogram = plot.create_histogram("date").update_xaxes(categoryorder='category ascending')
+    year_histogram = plot.create_histogram("date").update_xaxes(categoryorder='category ascending').update_layout(xaxis_tickangle=-45)
     genre_bar = plot.create_genre_bar()
     duration_histogram = plot.create_histogram("duration")
     mode_visualization = plot.create_mode()
